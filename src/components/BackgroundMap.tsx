@@ -1,8 +1,24 @@
 import React from "react";
 import map from "../assets/world-map-transparent.png";
+
 export const BackgroundMap: React.FC = () => {
   return (
     <div className="w-full h-full relative overflow-hidden">
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes scroll {
+            0% {
+              transform: translateX(0);
+            }
+            100% {
+              transform: translateX(-50%);
+            }
+          }
+          .animate-scroll {
+            animation: scroll 60s linear infinite;
+          }
+        `
+      }} />
       {/* 
         Container for the sliding background.
         Width is 200% to hold two copies of the image.

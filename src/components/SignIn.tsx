@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { map } from '../assets';
 
 interface SignInProps {
-  onBack: () => void;
-  onSignInSuccess: () => void;
+  onSignInSuccess?: () => void;
+  onGoToSignUp?: () => void;
 }
 
-export const SignIn: React.FC<SignInProps> = ({ onBack, onSignInSuccess }) => {
+export const SignIn: React.FC<SignInProps> = ({ onSignInSuccess, onGoToSignUp }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -26,7 +26,7 @@ export const SignIn: React.FC<SignInProps> = ({ onBack, onSignInSuccess }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Form submitted:', formData);
-    onSignInSuccess();
+    onSignInSuccess?.();
   };
 
   return (
@@ -73,9 +73,9 @@ export const SignIn: React.FC<SignInProps> = ({ onBack, onSignInSuccess }) => {
         `
       }} />
 
-      <div className="relative bg-white/65 backdrop-blur-sm rounded-2xl shadow-lg border border-white p-8 z-10" style={{width: '400px', maxWidth: '400px'}}>
+      <div className="relative bg-white/65 backdrop-blur-sm rounded-2xl shadow-lg border border-white p-6 z-10" style={{width: '400.19px', height: '539px'}}>
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Sign In</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Sign In</h1>
           <p className="text-sm text-gray-500">
             Enter your email and password to sign in!
           </p>
@@ -92,10 +92,17 @@ export const SignIn: React.FC<SignInProps> = ({ onBack, onSignInSuccess }) => {
           Sign in with Google
         </button>
 
+        {/* OR Divider */}
+        <div className="text-center text-sm text-gray-400 mb-6 flex items-center">
+          <div className="flex-1 h-px bg-gray-300"></div>
+          <span className="px-3">or</span>
+          <div className="flex-1 h-px bg-gray-300"></div>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email*
+              Email<span className="text-blue-500">*</span>
             </label>
             <input
               type="email"
@@ -110,7 +117,7 @@ export const SignIn: React.FC<SignInProps> = ({ onBack, onSignInSuccess }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Password*
+              Password<span className="text-blue-500">*</span>
             </label>
             <div className="relative">
               <input
@@ -142,7 +149,10 @@ export const SignIn: React.FC<SignInProps> = ({ onBack, onSignInSuccess }) => {
                 name="keepLoggedIn"
                 checked={formData.keepLoggedIn}
                 onChange={handleInputChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-white bg-white border-gray-300 rounded focus:ring-blue-500 checked:bg-black checked:border-black"
+                style={{
+                  accentColor: formData.keepLoggedIn ? '#000000' : undefined
+                }}
               />
               <label className="ml-2 text-sm text-gray-700">
                 Keep me logged in
@@ -165,7 +175,7 @@ export const SignIn: React.FC<SignInProps> = ({ onBack, onSignInSuccess }) => {
           <p className="text-sm text-gray-500">
             Not registered yet?{' '}
             <button 
-              onClick={onBack}
+              onClick={onGoToSignUp}
               className="text-gray-700 font-medium hover:underline"
             >
               Create an Account

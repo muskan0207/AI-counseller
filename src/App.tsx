@@ -4,17 +4,30 @@ import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { FooterInfo } from './components/FooterInfo';
 import { SignUp } from './components/SignUp';
+import { SignIn } from './components/SignIn';
 
 const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<'landing' | 'signup'>('landing');
+  const [currentPage, setCurrentPage] = useState<'landing' | 'signup' | 'signin'>('landing');
 
   const handleGetStarted = () => {
     setCurrentPage('signup');
   };
 
+  const handleGoToSignIn = () => {
+    setCurrentPage('signin');
+  };
+
+  const handleGoToSignUp = () => {
+    setCurrentPage('signup');
+  };
+
 
   if (currentPage === 'signup') {
-    return <SignUp />;
+    return <SignUp onGoToSignIn={handleGoToSignIn} />;
+  }
+
+  if (currentPage === 'signin') {
+    return <SignIn onGoToSignUp={handleGoToSignUp} />;
   }
 
   return (

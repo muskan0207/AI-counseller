@@ -3,9 +3,10 @@ import { map } from '../assets';
 
 interface SignUpProps {
   onSignUpSuccess?: () => void;
+  onGoToSignIn?: () => void;
 }
 
-export const SignUp: React.FC<SignUpProps> = ({ onSignUpSuccess }) => {
+export const SignUp: React.FC<SignUpProps> = ({ onSignUpSuccess, onGoToSignIn }) => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -76,7 +77,7 @@ export const SignUp: React.FC<SignUpProps> = ({ onSignUpSuccess }) => {
       <div className="relative bg-white/65 backdrop-blur-sm rounded-2xl shadow-lg border border-white p-6 z-10" style={{width: '400.19px', height: '539px'}}>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold text-gray-900">Sign Up</h1>
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-gray-600 cursor-pointer hover:text-gray-800" onClick={onGoToSignIn}>
             Already have an account?
           </p>
         </div>
@@ -169,7 +170,10 @@ export const SignUp: React.FC<SignUpProps> = ({ onSignUpSuccess }) => {
               name="agreeToTerms"
               checked={formData.agreeToTerms}
               onChange={handleInputChange}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-4 w-4 text-white bg-white border-gray-300 rounded focus:ring-blue-500 checked:bg-black checked:border-black"
+              style={{
+                accentColor: formData.agreeToTerms ? '#000000' : undefined
+              }}
               required
             />
             <label className="ml-2 text-xs text-gray-700">
