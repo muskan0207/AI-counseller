@@ -12,12 +12,9 @@ const App: React.FC = () => {
     setCurrentPage('signup');
   };
 
-  const handleBackToLanding = () => {
-    setCurrentPage('landing');
-  };
 
   if (currentPage === 'signup') {
-    return <SignUp onBack={handleBackToLanding} />;
+    return <SignUp />;
   }
 
   return (
