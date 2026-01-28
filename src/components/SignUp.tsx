@@ -2,11 +2,10 @@ import React, { useState } from 'react';
 import { map } from '../assets';
 
 interface SignUpProps {
-  onBack?: () => void;
   onSignUpSuccess?: () => void;
 }
 
-export const SignUp: React.FC<SignUpProps> = ({ onBack, onSignUpSuccess }) => {
+export const SignUp: React.FC<SignUpProps> = ({ onSignUpSuccess }) => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',

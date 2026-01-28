@@ -12,7 +12,7 @@ export const FooterInfo: React.FC = () => {
         preserveAspectRatio="none"
       >
         <foreignObject x="-20" y="-20" width="1488" height="108">
-          <div xmlns="http://www.w3.org/1999/xhtml"
+          <div
             style={{
               backdropFilter: 'blur(10px)',
               clipPath: 'url(#bgblur_footer_clip_path)',
