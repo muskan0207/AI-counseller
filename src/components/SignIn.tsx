@@ -1,100 +1,99 @@
-import React, { useState } from 'react';
-import { map } from '../assets';
+import React, { useState } from "react";
+import { supabase } from "../lib/supabaseClient";
+import { map } from "../assets";
 
 interface SignInProps {
-  onBack: () => void;
-  onSignInSuccess: () => void;
+  onBack?: () => void;
+  onSignInSuccess?: () => void;
+  onSignUpClick?: () => void;
 }
 
-export const SignIn: React.FC<SignInProps> = ({ onBack, onSignInSuccess }) => {
+export const SignIn: React.FC<SignInProps> = ({
+  onBack,
+  onSignInSuccess,
+  onSignUpClick,
+}) => {
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    keepLoggedIn: false
+    email: "",
+    password: "",
+    keepLoggedIn: false,
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    onSignInSuccess();
+    setIsLoading(true);
+    setError(null);
+
+    const { data, error: signInError } = await supabase.auth.signInWithPassword(
+      {
+        email: formData.email,
+        password: formData.password,
+      },
+    );
+
+    setIsLoading(false);
+
+    if (signInError) {
+      setError(signInError.message);
+    } else if (data.user) {
+      onSignInSuccess?.();
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-200 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* World Map Background - Full Width */}
-      <div className="absolute top-0 left-0 w-full h-full opacity-80">
-        <img 
-          src={map} 
-          alt="World Map" 
-          className="w-full h-full object-cover object-center scale-150"
-          loading='lazy'
+    <div className="relative w-full min-h-screen flex flex-col justify-center items-center bg-bg font-sans selection:bg-gray-200 py-10">
+      {/* Background World Map */}
+      <div className="absolute inset-0 z-0 flex items-center justify-center overflow-hidden pointer-events-none opacity-20">
+        <img
+          src={map}
+          alt="world map"
+          className="w-full h-full object-cover animate-pulse"
         />
-        {/* Diagonal blur overlay */}
-        <div className="absolute inset-0" style={{
-          background: 'linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.8) 60%, rgba(255,255,255,0.95) 100%)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          maskImage: 'linear-gradient(135deg, transparent 40%, black 60%)'
-        }}></div>
       </div>
 
-      {/* Animated Moving Light Beam */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div 
-          className="absolute -top-10 -left-10 w-[150vh] h-20 bg-gradient-to-r from-white/60 via-white/30 to-transparent blur-xl transform -rotate-45 origin-top-left animate-[moveLight_4s_ease-in-out_infinite]"
-        ></div>
-      </div>
-
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          @keyframes moveLight {
-            0% {
-              transform: translateX(-100%) translateY(-100%) rotate(-45deg);
-              opacity: 0;
-            }
-            50% {
-              opacity: 0.6;
-            }
-            100% {
-              transform: translateX(50vw) translateY(50vh) rotate(-45deg);
-              opacity: 0;
-            }
-          }
-        `
-      }} />
-
-      <div className="relative bg-white/65 backdrop-blur-sm rounded-2xl shadow-lg border border-white p-8 z-10" style={{width: '400px', maxWidth: '400px'}}>
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Sign In</h1>
-          <p className="text-sm text-gray-500">
-            Enter your email and password to sign in!
-          </p>
-        </div>
-
-        {/* Google Sign In Button */}
-        <button className="w-full bg-gray-800 text-white py-3 px-4 rounded-2xl hover:bg-gray-900 focus:outline-none transition duration-200 text-sm mb-6 flex items-center justify-center">
-          <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+      <div className="relative z-10 w-full max-w-[450px] p-8 md:p-10 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[40px] shadow-2xl">
+        <button
+          onClick={onBack}
+          className="mb-8 flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-gray-900 transition-all group"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform"
+          >
+            <path d="M19 12H5m0 0l7 7m-7-7l7-7" />
           </svg>
-          Sign in with Google
+          Back to landing
         </button>
+
+        <h1 className="text-[32px] font-bold text-gray-900 mb-2">Sign In</h1>
+        <p className="text-sm text-gray-400 mb-8">
+          Enter your email and password to sign in!
+        </p>
+
+        {error && (
+          <div className="mb-4 p-3 rounded-2xl bg-red-50 border border-red-100 text-xs text-red-600 font-medium">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs font-medium text-gray-700 mb-1">
               Email*
             </label>
             <input
@@ -102,14 +101,14 @@ export const SignIn: React.FC<SignInProps> = ({ onBack, onSignInSuccess }) => {
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              placeholder="mail@simmmple.com"
-              className="w-full px-4 py-3 bg-white/20 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 text-sm"
+              placeholder="mail@simmmmple.com"
+              className="w-full px-3 py-2 bg-white/5 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 text-sm"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs font-medium text-gray-700 mb-1">
               Password*
             </label>
             <div className="relative">
@@ -119,54 +118,78 @@ export const SignIn: React.FC<SignInProps> = ({ onBack, onSignInSuccess }) => {
                 value={formData.password}
                 onChange={handleInputChange}
                 placeholder="Min. 8 characters"
-                className="w-full px-4 py-3 pr-12 bg-white/20 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 text-sm"
+                className="w-full px-3 py-2 bg-white/5 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 text-sm"
                 required
               />
               <button
                 type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" strokeWidth="2" fill="none"/>
-                  <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" fill="none"/>
-                </svg>
+                {showPassword ? (
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="w-4 h-4"
+                  >
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                ) : (
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="w-4 h-4"
+                  >
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
               </button>
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
               <input
                 type="checkbox"
                 name="keepLoggedIn"
                 checked={formData.keepLoggedIn}
                 onChange={handleInputChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                id="keep"
               />
-              <label className="ml-2 text-sm text-gray-700">
+              <label htmlFor="keep" className="text-xs text-gray-400">
                 Keep me logged in
               </label>
             </div>
-            <a href="#" className="text-sm text-gray-500 hover:text-gray-700">
+            <button
+              type="button"
+              className="text-xs text-blue-600 font-bold hover:underline"
+            >
               Forgot password?
-            </a>
+            </button>
           </div>
 
           <button
             type="submit"
-            className="w-full bg-gray-800 text-white py-3 px-4 rounded-2xl hover:bg-gray-900 focus:outline-none transition duration-200 text-sm font-medium"
+            disabled={isLoading}
+            className="w-full py-3 bg-gray-900 text-white rounded-[20px] font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg disabled:opacity-50 disabled:scale-100"
           >
-            Sign In
+            {isLoading ? "Signing In..." : "Sign In"}
           </button>
         </form>
 
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500">
-            Not registered yet?{' '}
-            <button 
-              onClick={onBack}
-              className="text-gray-700 font-medium hover:underline"
+        <div className="mt-8 text-center pt-8 border-t border-gray-100">
+          <p className="text-xs text-gray-400">
+            Not registered yet?{" "}
+            <button
+              onClick={onSignUpClick}
+              className="text-blue-600 font-bold hover:underline"
             >
               Create an Account
             </button>
