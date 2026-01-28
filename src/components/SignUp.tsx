@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { map } from '../assets';
 
 interface SignUpProps {
-  onSignUpSuccess?: () => void;
+  onSignUpSuccess?: (email: string) => void;
   onGoToSignIn?: () => void;
 }
 
@@ -17,6 +17,50 @@ export const SignUp: React.FC<SignUpProps> = ({ onSignUpSuccess, onGoToSignIn })
 
   const [showPassword, setShowPassword] = useState(false);
 
+  // Email validation
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const validDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com'];
+    const domain = email.split('@')[1];
+    return emailRegex.test(email) && validDomains.includes(domain);
+  };
+
+  // Password strength calculation
+  const getPasswordStrength = (password: string) => {
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+    return strength;
+  };
+
+  const passwordStrength = getPasswordStrength(formData.password);
+  const getStrengthText = () => {
+    switch (passwordStrength) {
+      case 0:
+      case 1: return 'Weak';
+      case 2: return 'Fair';
+      case 3: return 'Good';
+      case 4:
+      case 5: return 'Strong';
+      default: return 'Weak';
+    }
+  };
+
+  const getStrengthColor = () => {
+    switch (passwordStrength) {
+      case 0:
+      case 1: return 'bg-red-500';
+      case 2: return 'bg-yellow-500';
+      case 3: return 'bg-blue-500';
+      case 4:
+      case 5: return 'bg-green-500';
+      default: return 'bg-red-500';
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -27,8 +71,19 @@ export const SignUp: React.FC<SignUpProps> = ({ onSignUpSuccess, onGoToSignIn })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isValidEmail(formData.email)) {
+      alert('Please enter a valid email with gmail.com, yahoo.com, outlook.com, or hotmail.com');
+      return;
+    }
+    
+    if (passwordStrength < 3) {
+      alert('Password must be stronger. Include uppercase, lowercase, numbers, and special characters.');
+      return;
+    }
+    
     console.log('Form submitted:', formData);
-    onSignUpSuccess?.();
+    onSignUpSuccess?.(formData.email);
   };
 
   return (
@@ -122,10 +177,15 @@ export const SignUp: React.FC<SignUpProps> = ({ onSignUpSuccess, onGoToSignIn })
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              placeholder="mail@simmmmple.com"
-              className="w-full px-3 py-2 bg-white/5 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 text-sm"
+              placeholder="mail@gmail.com"
+              className={`w-full px-3 py-2 bg-white/5 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 text-sm ${
+                formData.email && !isValidEmail(formData.email) ? 'border-red-500' : 'border-gray-300'
+              }`}
               required
             />
+            {formData.email && !isValidEmail(formData.email) && (
+              <p className="text-red-500 text-xs mt-1">Please use gmail.com, yahoo.com, outlook.com, or hotmail.com</p>
+            )}
           </div>
 
           <div>
@@ -155,12 +215,16 @@ export const SignUp: React.FC<SignUpProps> = ({ onSignUpSuccess, onGoToSignIn })
             </div>
             <div className="mt-1 flex items-center">
               <div className="flex space-x-1">
-                <div className="w-3 h-1.5 bg-red-500 rounded-full"></div>
-                <div className="w-3 h-1.5 bg-gray-300 rounded-full"></div>
-                <div className="w-3 h-1.5 bg-gray-300 rounded-full"></div>
-                <div className="w-3 h-1.5 bg-gray-300 rounded-full"></div>
+                {[1, 2, 3, 4].map((level) => (
+                  <div
+                    key={level}
+                    className={`w-3 h-1.5 rounded-full ${
+                      level <= passwordStrength ? getStrengthColor() : 'bg-gray-300'
+                    }`}
+                  ></div>
+                ))}
               </div>
-              <span className="ml-2 text-xs text-gray-500">Poor</span>
+              <span className="ml-2 text-xs text-gray-500">{getStrengthText()}</span>
             </div>
           </div>
 

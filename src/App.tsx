@@ -5,9 +5,11 @@ import { Hero } from './components/Hero';
 import { FooterInfo } from './components/FooterInfo';
 import { SignUp } from './components/SignUp';
 import { SignIn } from './components/SignIn';
+import { Verification } from './components/Verification';
 
 const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<'landing' | 'signup' | 'signin'>('landing');
+  const [currentPage, setCurrentPage] = useState<'landing' | 'signup' | 'signin' | 'verification'>('landing');
+  const [userEmail, setUserEmail] = useState('');
 
   const handleGetStarted = () => {
     setCurrentPage('signup');
@@ -21,13 +23,26 @@ const App: React.FC = () => {
     setCurrentPage('signup');
   };
 
+  const handleSignUpSuccess = (email: string) => {
+    setUserEmail(email);
+    setCurrentPage('verification');
+  };
+
+  const handleVerificationSuccess = () => {
+    setCurrentPage('landing'); // or redirect to dashboard
+  };
+
 
   if (currentPage === 'signup') {
-    return <SignUp onGoToSignIn={handleGoToSignIn} />;
+    return <SignUp onGoToSignIn={handleGoToSignIn} onSignUpSuccess={handleSignUpSuccess} />;
   }
 
   if (currentPage === 'signin') {
     return <SignIn onGoToSignUp={handleGoToSignUp} />;
+  }
+
+  if (currentPage === 'verification') {
+    return <Verification email={userEmail} onVerificationSuccess={handleVerificationSuccess} />;
   }
 
   return (
