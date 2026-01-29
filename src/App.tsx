@@ -6,9 +6,13 @@ import { FooterInfo } from './components/FooterInfo';
 import { SignUp } from './components/SignUp';
 import { SignIn } from './components/SignIn';
 import { Verification } from './components/Verification';
+import { AcademicBackground } from './components/AcademicBackground';
+import { StudyGoals } from './components/StudyGoals';
+import { BudgetFinance } from './components/BudgetFinance';
+import { ReadinessCheck } from './components/ReadinessCheck';
 
 const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<'landing' | 'signup' | 'signin' | 'verification'>('landing');
+  const [currentPage, setCurrentPage] = useState<'landing' | 'signup' | 'signin' | 'verification' | 'academic' | 'studygoals' | 'budget' | 'readiness'>('landing');
   const [userEmail, setUserEmail] = useState('');
 
   const handleGetStarted = () => {
@@ -29,7 +33,35 @@ const App: React.FC = () => {
   };
 
   const handleVerificationSuccess = () => {
-    setCurrentPage('landing'); // or redirect to dashboard
+    setCurrentPage('academic');
+  };
+
+  const handleAcademicNext = () => {
+    setCurrentPage('studygoals');
+  };
+
+  const handleStudyGoalsNext = () => {
+    setCurrentPage('budget');
+  };
+
+  const handleStudyGoalsBack = () => {
+    setCurrentPage('academic');
+  };
+
+  const handleBudgetNext = () => {
+    setCurrentPage('readiness');
+  };
+
+  const handleBudgetBack = () => {
+    setCurrentPage('studygoals');
+  };
+
+  const handleReadinessNext = () => {
+    setCurrentPage('landing'); // or final step
+  };
+
+  const handleReadinessBack = () => {
+    setCurrentPage('budget');
   };
 
 
@@ -43,6 +75,22 @@ const App: React.FC = () => {
 
   if (currentPage === 'verification') {
     return <Verification email={userEmail} onVerificationSuccess={handleVerificationSuccess} />;
+  }
+
+  if (currentPage === 'academic') {
+    return <AcademicBackground onNext={handleAcademicNext} />;
+  }
+
+  if (currentPage === 'studygoals') {
+    return <StudyGoals onNext={handleStudyGoalsNext} onBack={handleStudyGoalsBack} />;
+  }
+
+  if (currentPage === 'budget') {
+    return <BudgetFinance onNext={handleBudgetNext} onBack={handleBudgetBack} />;
+  }
+
+  if (currentPage === 'readiness') {
+    return <ReadinessCheck onNext={handleReadinessNext} onBack={handleReadinessBack} />;
   }
 
   return (
