@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { map } from '../assets';
+import ApiService from '../services/apiService';
 
 interface SignUpProps {
   onSignUpSuccess?: (email: string) => void;
@@ -69,7 +70,7 @@ export const SignUp: React.FC<SignUpProps> = ({ onSignUpSuccess, onGoToSignIn })
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!isValidEmail(formData.email)) {
@@ -82,8 +83,12 @@ export const SignUp: React.FC<SignUpProps> = ({ onSignUpSuccess, onGoToSignIn })
       return;
     }
     
-    console.log('Form submitted:', formData);
-    onSignUpSuccess?.(formData.email);
+    try {
+      const result = await ApiService.signup(formData);
+      onSignUpSuccess?.(formData.email);
+    } catch (error) {
+      alert('Sign up failed: ' + error.message);
+    }
   };
 
   return (

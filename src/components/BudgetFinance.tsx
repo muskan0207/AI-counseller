@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { map } from '../assets';
 
 interface BudgetFinanceProps {
-  onNext?: () => void;
+  onNext?: (data: any) => void;
   onBack?: () => void;
 }
 
@@ -29,8 +29,12 @@ export const BudgetFinance: React.FC<BudgetFinanceProps> = ({ onNext, onBack }) 
       return;
     }
     
-    console.log('Budget & Finance submitted:', formData);
-    onNext?.();
+    const profileData = {
+      budgetRange: formData.annualBudgetRange,
+      fundingPlan: formData.fundingSource
+    };
+    
+    onNext?.(profileData);
   };
 
   return (

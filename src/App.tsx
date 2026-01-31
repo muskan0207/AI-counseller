@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import AICounsellor from './components/AICounsellor';
@@ -16,6 +16,7 @@ import { Hero } from './components/Hero';
 import { BackgroundMap } from './components/BackgroundMap';
 import {type AppState, AppStage, type University, type ToDoItem } from './types';
 import { MOCK_UNIVERSITIES, INITIAL_TODOS } from './constants';
+import ApiService from './services/apiService';
 
 // Define app flow stages
 const AppFlow = {
@@ -53,6 +54,7 @@ const App: React.FC = () => {
   const [currentFlow, setCurrentFlow] = useState<AppFlow>(AppFlow.ONBOARDING);
   const [userEmail, setUserEmail] = useState<string>('');
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [state, setState] = useState<AppState>({
     profile: INITIAL_PROFILE,
     shortlistedUniversities: [],
@@ -61,77 +63,142 @@ const App: React.FC = () => {
     currentStage: AppStage.BUILDING_PROFILE,
   });
 
+  // Load user data on app start
+  useEffect(() => {
+    if (token) {
+      loadUserData();
+      setCurrentFlow(AppFlow.MAIN_APP);
+    }
+  }, [token]);
+
+  const loadUserData = async () => {
+    try {
+      const [profile, todos] = await Promise.all([
+        ApiService.getProfile(),
+        ApiService.getTodos()
+      ]);
+      setState(prev => ({
+        ...prev,
+        profile: profile.profile,
+        currentStage: profile.currentStage,
+        shortlistedUniversities: profile.shortlistedUniversities || [],
+        lockedUniversityIds: profile.lockedUniversityIds || [],
+        toDos: todos
+      }));
+    } catch (error) {
+      console.error('Failed to load user data:', error);
+    }
+  };
+
   const handleAction = useCallback((type: string, payload?: any) => {
-    setState(prev => {
+    const executeAction = async () => {
       switch (type) {
         case 'shortlist': {
           const uniId = payload;
-          const uni = MOCK_UNIVERSITIES.find(u => u.id === uniId);
-          if (!uni || prev.shortlistedUniversities.some(u => u.id === uniId)) return prev;
-          return {
-            ...prev,
-            shortlistedUniversities: [...prev.shortlistedUniversities, uni]
-          };
+          try {
+            await ApiService.shortlistUniversity(uniId);
+            const uni = MOCK_UNIVERSITIES.find(u => u.id === uniId);
+            if (!uni) return;
+            setState(prev => {
+              if (prev.shortlistedUniversities.some(u => u.id === uniId)) return prev;
+              return {
+                ...prev,
+                shortlistedUniversities: [...prev.shortlistedUniversities, uni]
+              };
+            });
+          } catch (error) {
+            console.error('Failed to shortlist university:', error);
+          }
+          break;
         }
         case 'lock': {
           const uniId = payload;
-          if (prev.lockedUniversityIds.includes(uniId)) return prev;
-          const newLocked = [...prev.lockedUniversityIds, uniId];
-          return {
-            ...prev,
-            lockedUniversityIds: newLocked,
-            currentStage: Math.max(prev.currentStage, AppStage.FINALIZING_UNIVERSITIES) as AppStage
-          };
+          try {
+            await ApiService.lockUniversity(uniId);
+            setState(prev => {
+              if (prev.lockedUniversityIds.includes(uniId)) return prev;
+              const newLocked = [...prev.lockedUniversityIds, uniId];
+              return {
+                ...prev,
+                lockedUniversityIds: newLocked,
+                currentStage: Math.max(prev.currentStage, AppStage.FINALIZING_UNIVERSITIES) as AppStage
+              };
+            });
+          } catch (error) {
+            console.error('Failed to lock university:', error);
+          }
+          break;
         }
         case 'unlock': {
           const uniId = payload;
-          const newLocked = prev.lockedUniversityIds.filter(id => id !== uniId);
-          return {
-            ...prev,
-            lockedUniversityIds: newLocked,
-            currentStage: (newLocked.length === 0 && prev.currentStage >= AppStage.PREPARING_APPLICATIONS 
-              ? AppStage.FINALIZING_UNIVERSITIES 
-              : prev.currentStage) as AppStage
-          };
+          try {
+            const result = await ApiService.unlockUniversity(uniId);
+            alert(result.warning || 'University unlocked');
+            setState(prev => {
+              const newLocked = prev.lockedUniversityIds.filter(id => id !== uniId);
+              return {
+                ...prev,
+                lockedUniversityIds: newLocked,
+                currentStage: (newLocked.length === 0 && prev.currentStage >= 2 
+                  ? 1 
+                  : prev.currentStage) as AppStage
+              };
+            });
+          } catch (error) {
+            console.error('Failed to unlock university:', error);
+          }
+          break;
         }
         case 'addTask': {
-          const newTask: ToDoItem = {
-            id: `t-${Date.now()}`,
-            task: payload.task,
-            category: payload.category || 'Applications',
-            completed: false
-          };
-          return { ...prev, toDos: [newTask, ...prev.toDos] };
+          try {
+            const todo = await ApiService.createTodo({
+              task: payload.task,
+              category: payload.category || 'Applications'
+            });
+            setState(prev => ({ ...prev, toDos: [todo, ...prev.toDos] }));
+          } catch (error) {
+            console.error('Failed to create todo:', error);
+          }
+          break;
         }
         case 'completeTask': {
           const taskId = payload;
-          return {
-            ...prev,
-            toDos: prev.toDos.map(todo => 
-              todo.id === taskId ? { ...todo, completed: true } : todo
-            )
-          };
+          try {
+            await ApiService.updateTodo(taskId, { completed: true });
+            setState(prev => ({
+              ...prev,
+              toDos: prev.toDos.map(todo => 
+                todo.id === taskId ? { ...todo, completed: true } : todo
+              )
+            }));
+          } catch (error) {
+            console.error('Failed to complete task:', error);
+          }
+          break;
         }
         case 'nextStage': {
-          if (prev.currentStage === AppStage.FINALIZING_UNIVERSITIES && prev.lockedUniversityIds.length === 0) {
-            alert("Please lock at least one university to start preparing applications!");
-            return prev;
-          }
-          const next = Math.min(prev.currentStage + 1, AppStage.PREPARING_APPLICATIONS);
-          return { ...prev, currentStage: next as AppStage };
+          setState(prev => {
+            if (prev.currentStage === AppStage.FINALIZING_UNIVERSITIES && prev.lockedUniversityIds.length === 0) {
+              alert("Please lock at least one university to start preparing applications!");
+              return prev;
+            }
+            const next = Math.min(prev.currentStage + 1, AppStage.PREPARING_APPLICATIONS);
+            return { ...prev, currentStage: next as AppStage };
+          });
+          break;
         }
         case 'switchToAICounsellor': {
           setActiveTab('aicounsellor');
-          return prev;
+          break;
         }
         case 'switchToUniversities': {
           setActiveTab('universities');
-          return prev;
+          break;
         }
-        default:
-          return prev;
       }
-    });
+    };
+    
+    executeAction();
   }, []);
 
   // Handle authentication and onboarding flow
@@ -140,7 +207,11 @@ const App: React.FC = () => {
     onGetStarted: () => setCurrentFlow(AppFlow.SIGN_UP),
     
     // Sign In flow
-    onSignInSuccess: () => setCurrentFlow(AppFlow.MAIN_APP),
+    onSignInSuccess: (authToken: string) => {
+      setToken(authToken);
+      localStorage.setItem('token', authToken);
+      setCurrentFlow(AppFlow.MAIN_APP);
+    },
     onGoToSignUp: () => setCurrentFlow(AppFlow.SIGN_UP),
     
     // Sign Up flow
@@ -154,12 +225,40 @@ const App: React.FC = () => {
     onVerificationSuccess: () => setCurrentFlow(AppFlow.ACADEMIC_BACKGROUND),
     
     // Onboarding flow
-    onAcademicNext: () => setCurrentFlow(AppFlow.STUDY_GOALS),
-    onStudyGoalsNext: () => setCurrentFlow(AppFlow.BUDGET_FINANCE),
+    onAcademicNext: async (data: any) => {
+      try {
+        await ApiService.updateProfile(data);
+        setCurrentFlow(AppFlow.STUDY_GOALS);
+      } catch (error) {
+        console.error('Failed to save academic data:', error);
+      }
+    },
+    onStudyGoalsNext: async (data: any) => {
+      try {
+        await ApiService.updateProfile(data);
+        setCurrentFlow(AppFlow.BUDGET_FINANCE);
+      } catch (error) {
+        console.error('Failed to save study goals:', error);
+      }
+    },
     onStudyGoalsBack: () => setCurrentFlow(AppFlow.ACADEMIC_BACKGROUND),
-    onBudgetNext: () => setCurrentFlow(AppFlow.READINESS_CHECK),
+    onBudgetNext: async (data: any) => {
+      try {
+        await ApiService.updateProfile(data);
+        setCurrentFlow(AppFlow.READINESS_CHECK);
+      } catch (error) {
+        console.error('Failed to save budget data:', error);
+      }
+    },
     onBudgetBack: () => setCurrentFlow(AppFlow.STUDY_GOALS),
-    onReadinessNext: () => setCurrentFlow(AppFlow.MAIN_APP),
+    onReadinessNext: async (data: any) => {
+      try {
+        await ApiService.updateProfile({ ...data, onboardingCompleted: true });
+        setCurrentFlow(AppFlow.MAIN_APP);
+      } catch (error) {
+        console.error('Failed to complete onboarding:', error);
+      }
+    },
     onReadinessBack: () => setCurrentFlow(AppFlow.BUDGET_FINANCE),
   };
 

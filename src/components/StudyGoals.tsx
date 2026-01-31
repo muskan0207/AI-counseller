@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { map } from '../assets';
 
 interface StudyGoalsProps {
-  onNext?: () => void;
+  onNext?: (data: any) => void;
   onBack?: () => void;
 }
 
@@ -32,8 +32,14 @@ export const StudyGoals: React.FC<StudyGoalsProps> = ({ onNext, onBack }) => {
       return;
     }
     
-    console.log('Study goals submitted:', formData);
-    onNext?.();
+    const profileData = {
+      intendedDegree: formData.intendedDegree,
+      fieldOfStudy: formData.targetField,
+      preferredCountries: [formData.preferredCountries],
+      targetIntakeYear: formData.targetedIntake
+    };
+    
+    onNext?.(profileData);
   };
 
   return (

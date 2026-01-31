@@ -1,6 +1,6 @@
-const API_BASE = process.env.NODE_ENV === 'production' 
-  ? 'https://your-vercel-app.vercel.app/api' 
-  : 'http://localhost:3000/api';
+const API_BASE = typeof window !== 'undefined' && window.location.origin.includes('localhost') 
+  ? 'http://localhost:3000/api' 
+  : '/api';
 
 class ApiService {
   static async request(endpoint, options = {}) {
@@ -92,6 +92,12 @@ class ApiService {
   // Universities
   static getUniversities() {
     return this.request('/universities');
+  }
+
+  static unlockUniversity(universityId) {
+    return this.request(`/user/lock/${universityId}`, {
+      method: 'DELETE',
+    });
   }
 
   // AI

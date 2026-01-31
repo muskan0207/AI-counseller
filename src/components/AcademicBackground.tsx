@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { map } from '../assets';
 
 interface AcademicBackgroundProps {
-  onNext?: () => void;
+  onNext?: (data: any) => void;
   onBack?: () => void;
 }
 
@@ -43,8 +43,14 @@ export const AcademicBackground: React.FC<AcademicBackgroundProps> = ({ onNext, 
       return;
     }
     
-    console.log('Academic background submitted:', formData);
-    onNext?.();
+    const profileData = {
+      educationLevel: formData.educationLevel,
+      major: formData.stream,
+      graduationYear: parseInt(formData.passingYear),
+      gpa: formData.cgpa
+    };
+    
+    onNext?.(profileData);
   };
 
   return (

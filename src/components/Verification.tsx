@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { map } from '../assets';
+import ApiService from '../services/apiService';
 
 interface VerificationProps {
   email?: string;
@@ -8,17 +9,34 @@ interface VerificationProps {
 
 export const Verification: React.FC<VerificationProps> = ({ email, onVerificationSuccess }) => {
   const [isResending, setIsResending] = useState(false);
+  const [code, setCode] = useState('');
 
   const handleResendCode = async () => {
     setIsResending(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await ApiService.request('/auth/resend-code', {
+        method: 'POST',
+        body: JSON.stringify({ email })
+      });
+    } catch (error) {
+      console.error('Failed to resend code:', error);
+    } finally {
       setIsResending(false);
-    }, 2000);
+    }
   };
 
-  const handleCheck = () => {
-    onVerificationSuccess?.();
+  const handleVerify = async () => {
+    if (!code.trim()) {
+      alert('Please enter verification code');
+      return;
+    }
+    
+    try {
+      await ApiService.verify({ email, code });
+      onVerificationSuccess?.();
+    } catch (error) {
+      alert('Verification failed: ' + error.message);
+    }
   };
 
   return (
@@ -66,18 +84,27 @@ export const Verification: React.FC<VerificationProps> = ({ email, onVerificatio
 
       <div className="relative bg-white/25 backdrop-blur-sm rounded-2xl shadow-lg border border-white p-6 z-10 flex flex-col justify-center" style={{width: '450.19px', height: '279px'}}>
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Check your inbox</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Enter Verification Code</h1>
           <p className="text-sm text-gray-500">
-            We have sent verification link on {email || 'your email'}
+            We have sent a 6-digit code to {email || 'your email'}
           </p>
         </div>
 
         <div className="space-y-6">
+          <input
+            type="text"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            placeholder="Enter 6-digit code"
+            className="w-full px-4 py-3 bg-white/20 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 text-sm text-center"
+            maxLength={6}
+          />
+          
           <button
-            onClick={handleCheck}
+            onClick={handleVerify}
             className="w-full bg-gray-800 text-white py-3 px-4 rounded-2xl hover:bg-gray-900 focus:outline-none transition duration-200 text-sm"
           >
-            Check
+            Verify
           </button>
 
           <div className="flex justify-between items-center text-xs">

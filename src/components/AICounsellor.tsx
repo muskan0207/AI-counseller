@@ -32,60 +32,68 @@ const AICounsellor: React.FC<AICounsellorProps> = ({ state, onAction }) => {
     const analysis = analyzeProfile(state.profile);
     const recommendations = getRecommendedUniversities(MOCK_UNIVERSITIES, state.profile);
     
-    let initialMessage = `Hello ${state.profile.name}! I've analyzed your profile and here's what I found:\n\n`;
+    let initialMessage = `Hello ${state.profile.name}! I'm your AI Study Abroad Counsellor. I've analyzed your profile and I'm here to guide your journey step by step.\n\n`;
     
-    // Profile Strengths
-    initialMessage += `🎯 **Your Strengths:**\n`;
+    // Profile Analysis
+    initialMessage += `📊 **PROFILE ANALYSIS:**\n`;
+    initialMessage += `Overall Strength: ${analysis.overallScore}/100\n\n`;
+    
+    // Strengths
+    initialMessage += `✅ **YOUR STRENGTHS:**\n`;
     analysis.strengths.forEach(strength => {
       initialMessage += `• ${strength}\n`;
     });
     
-    // Profile Gaps
+    // Gaps
     if (analysis.gaps.length > 0) {
-      initialMessage += `\n⚠️ **Areas to Improve:**\n`;
+      initialMessage += `\n⚠️ **AREAS TO IMPROVE:**\n`;
       analysis.gaps.forEach(gap => {
         initialMessage += `• ${gap}\n`;
       });
     }
     
-    // University Recommendations
-    initialMessage += `\n🏫 **My University Recommendations:**\n\n`;
+    // University Recommendations with WHY
+    initialMessage += `\n🎯 **MY UNIVERSITY RECOMMENDATIONS:**\n\n`;
     
     if (recommendations.dream.length > 0) {
-      initialMessage += `**Dream Universities** (Reach for the stars!):\n`;
-      recommendations.dream.slice(0, 2).forEach(uni => {
-        const reason = getUniversityFitReason(uni, state.profile);
-        initialMessage += `• ${uni.name} (${uni.country}) - ${reason}\n`;
-      });
+      const uni = recommendations.dream[0];
+      initialMessage += `**🌟 DREAM: ${uni.name}** (${uni.country})\n`;
+      initialMessage += `WHY: ${getUniversityFitReason(uni, state.profile)}\n`;
+      initialMessage += `RISK: ${uni.risks}\n\n`;
     }
     
     if (recommendations.target.length > 0) {
-      initialMessage += `\n**Target Universities** (Great fit for you!):\n`;
-      recommendations.target.slice(0, 2).forEach(uni => {
-        const reason = getUniversityFitReason(uni, state.profile);
-        initialMessage += `• ${uni.name} (${uni.country}) - ${reason}\n`;
-      });
+      const uni = recommendations.target[0];
+      initialMessage += `**🎯 TARGET: ${uni.name}** (${uni.country})\n`;
+      initialMessage += `WHY: ${getUniversityFitReason(uni, state.profile)}\n`;
+      initialMessage += `RISK: ${uni.risks}\n\n`;
     }
     
     if (recommendations.safe.length > 0) {
-      initialMessage += `\n**Safe Universities** (High acceptance chance!):\n`;
-      recommendations.safe.slice(0, 2).forEach(uni => {
-        const reason = getUniversityFitReason(uni, state.profile);
-        initialMessage += `• ${uni.name} (${uni.country}) - ${reason}\n`;
-      });
+      const uni = recommendations.safe[0];
+      initialMessage += `**✅ SAFE: ${uni.name}** (${uni.country})\n`;
+      initialMessage += `WHY: ${getUniversityFitReason(uni, state.profile)}\n`;
+      initialMessage += `RISK: ${uni.risks}\n\n`;
     }
     
-    initialMessage += `\n💡 **Next Steps:**\n`;
-    analysis.recommendations.slice(0, 3).forEach(rec => {
-      initialMessage += `• ${rec}\n`;
-    });
+    // Next Steps
+    initialMessage += `🚀 **IMMEDIATE NEXT STEPS:**\n`;
+    if (state.currentStage === 0) {
+      initialMessage += `1. Let me shortlist your top 3 universities\n`;
+      initialMessage += `2. Create your application timeline\n`;
+      initialMessage += `3. Identify urgent tasks to complete\n\n`;
+    }
     
-    initialMessage += `\nWhat would you like to focus on today?`;
+    initialMessage += `💬 **What would you like me to help you with first?**\n`;
+    initialMessage += `• "Shortlist universities for me"\n`;
+    initialMessage += `• "Create my application plan"\n`;
+    initialMessage += `• "What should I improve in my profile?"\n`;
+    initialMessage += `• "Show me scholarship opportunities"`;
     
     const actions = [
-      { type: 'showUniversities', label: 'Show All Recommendations', payload: null },
-      { type: 'analyzeProfile', label: 'Detailed Profile Analysis', payload: null },
-      { type: 'createTasks', label: 'Create Action Plan', payload: null }
+      { type: 'autoShortlist', label: 'Auto-Shortlist Top 3', payload: null },
+      { type: 'createPlan', label: 'Create Application Plan', payload: null },
+      { type: 'profileGaps', label: 'Fix Profile Gaps', payload: null }
     ];
     
     setMessages([{ role: 'ai', text: initialMessage, actions }]);
@@ -97,6 +105,43 @@ const AICounsellor: React.FC<AICounsellorProps> = ({ state, onAction }) => {
 
   const handleActionClick = (actionType: string, payload?: any) => {
     switch (actionType) {
+      case 'autoShortlist':
+        // Auto-shortlist top 3 universities
+        const recommendations = getRecommendedUniversities(MOCK_UNIVERSITIES, state.profile);
+        const topUnis = [
+          ...recommendations.dream.slice(0, 1),
+          ...recommendations.target.slice(0, 1), 
+          ...recommendations.safe.slice(0, 1)
+        ];
+        topUnis.forEach(uni => onAction('shortlist', uni.id));
+        setMessages(prev => [...prev, { 
+          role: 'ai', 
+          text: `Perfect! I've shortlisted your top 3 universities:\n\n${topUnis.map(u => `• ${u.name} (${u.category})`).join('\n')}\n\nNow let's create your application timeline. What's your target application deadline?` 
+        }]);
+        break;
+      case 'createPlan':
+        const tasks = [
+          'Complete IELTS/TOEFL preparation',
+          'Draft Statement of Purpose', 
+          'Request recommendation letters',
+          'Prepare financial documents',
+          'Research scholarship opportunities'
+        ];
+        tasks.forEach(task => onAction('addTask', { task, category: 'Applications' }));
+        setMessages(prev => [...prev, { 
+          role: 'ai', 
+          text: `Excellent! I've created your 5-step application plan. Check your dashboard to track progress.\n\nNext, let's work on strengthening your profile. Which area would you like to focus on first?` 
+        }]);
+        break;
+      case 'profileGaps':
+        const analysis = analyzeProfile(state.profile);
+        let gapText = `Let's fix your profile gaps:\n\n`;
+        analysis.gaps.forEach((gap, i) => {
+          gapText += `${i + 1}. ${gap}\n`;
+        });
+        gapText += `\nWhich gap should we tackle first? I can help you create a specific action plan.`;
+        setMessages(prev => [...prev, { role: 'ai', text: gapText }]);
+        break;
       case 'showUniversities':
         onAction('switchToUniversities');
         break;
@@ -116,14 +161,14 @@ const AICounsellor: React.FC<AICounsellorProps> = ({ state, onAction }) => {
         }]);
         break;
       case 'createTasks':
-        const tasks = [
+        const tasks2 = [
           'Complete Statement of Purpose draft',
           'Gather academic transcripts',
           'Request recommendation letters',
           'Prepare financial documents',
           'Research scholarship opportunities'
         ];
-        tasks.forEach(task => onAction('addTask', { task, category: 'Applications' }));
+        tasks2.forEach(task => onAction('addTask', { task, category: 'Applications' }));
         setMessages(prev => [...prev, { 
           role: 'ai', 
           text: `Perfect! I've created 5 essential application tasks for you. Check your dashboard to track progress. Remember, early preparation is key to success!` 
@@ -137,17 +182,17 @@ const AICounsellor: React.FC<AICounsellorProps> = ({ state, onAction }) => {
         }]);
         break;
       case 'analyzeProfile':
-        const analysis = analyzeProfile(state.profile);
+        const analysis2 = analyzeProfile(state.profile);
         let analysisText = `📊 **Detailed Profile Analysis:**\n\n`;
-        analysisText += `**Overall Score: ${analysis.overallScore}/100**\n\n`;
+        analysisText += `**Overall Score: ${analysis2.overallScore}/100**\n\n`;
         analysisText += `**Detailed Breakdown:**\n`;
-        analysis.strengths.forEach(strength => analysisText += `✅ ${strength}\n`);
-        if (analysis.gaps.length > 0) {
+        analysis2.strengths.forEach(strength => analysisText += `✅ ${strength}\n`);
+        if (analysis2.gaps.length > 0) {
           analysisText += `\n**Improvement Areas:**\n`;
-          analysis.gaps.forEach(gap => analysisText += `❌ ${gap}\n`);
+          analysis2.gaps.forEach(gap => analysisText += `❌ ${gap}\n`);
         }
         analysisText += `\n**My Recommendations:**\n`;
-        analysis.recommendations.forEach(rec => analysisText += `💡 ${rec}\n`);
+        analysis2.recommendations.forEach(rec => analysisText += `💡 ${rec}\n`);
         setMessages(prev => [...prev, { role: 'ai', text: analysisText }]);
         break;
     }
@@ -162,33 +207,41 @@ const AICounsellor: React.FC<AICounsellorProps> = ({ state, onAction }) => {
     setIsLoading(true);
 
     try {
-      // Enhanced context for AI
-      const analysis = analyzeProfile(state.profile);
-      const enhancedState = {
-        ...state,
-        profileAnalysis: analysis,
-        availableUniversities: MOCK_UNIVERSITIES
-      };
+      const result = await ApiService.chatWithAI(userMsg);
       
-      const result = await getAIResponse(userMsg, enhancedState);
-      
-      // Check if AI response suggests actions
-      let actions: any[] = [];
-      if (result.toLowerCase().includes('shortlist') || result.toLowerCase().includes('recommend')) {
-        const recommendations = getRecommendedUniversities(MOCK_UNIVERSITIES, state.profile);
-        const topUni = recommendations.target[0] || recommendations.dream[0] || recommendations.safe[0];
-        if (topUni) {
-          actions.push({ type: 'shortlistUniversity', label: `Shortlist ${topUni.name}`, payload: topUni.id });
+      // Handle AI actions
+      if (result.actions && result.actions.length > 0) {
+        for (const action of result.actions) {
+          switch (action.type) {
+            case 'shortlist':
+              onAction('shortlist', action.universityId);
+              break;
+            case 'lock':
+              onAction('lock', action.universityId);
+              break;
+            case 'todo':
+              // Todo already created by backend
+              break;
+          }
         }
       }
       
-      if (result.toLowerCase().includes('task') || result.toLowerCase().includes('todo')) {
-        actions.push({ type: 'createTasks', label: 'Create Action Plan', payload: null });
-      }
-      
-      setMessages(prev => [...prev, { role: 'ai', text: result, actions: actions.length > 0 ? actions : undefined }]);
+      setMessages(prev => [...prev, { 
+        role: 'ai', 
+        text: result.response,
+        actions: result.actions ? result.actions.map(a => ({
+          type: a.type,
+          label: a.type === 'shortlist' ? 'University Shortlisted' : 
+                 a.type === 'lock' ? 'University Locked' : 
+                 a.type === 'todo' ? 'Task Created' : 'Action Completed',
+          payload: a.universityId || a.task
+        })) : undefined
+      }]);
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'ai', text: "I'm having trouble connecting right now. Please try again later." }]);
+      setMessages(prev => [...prev, { 
+        role: 'ai', 
+        text: "I'm having trouble connecting right now. Please try again later." 
+      }]);
     } finally {
       setIsLoading(false);
     }

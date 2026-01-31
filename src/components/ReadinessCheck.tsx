@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { map } from '../assets';
 
 interface ReadinessCheckProps {
-  onNext?: () => void;
+  onNext?: (data: any) => void;
   onBack?: () => void;
 }
 
@@ -35,8 +35,12 @@ export const ReadinessCheck: React.FC<ReadinessCheckProps> = ({ onNext, onBack }
       return;
     }
     
-    console.log('Readiness Check submitted:', formData);
-    onNext?.();
+    const profileData = {
+      ieltsScore: formData.englishTestScore,
+      greScore: formData.aptitudeTestScore
+    };
+    
+    onNext?.(profileData);
   };
 
   return (

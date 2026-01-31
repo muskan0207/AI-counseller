@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { map } from '../assets';
 
 interface SignInProps {
-  onSignInSuccess?: () => void;
+  onSignInSuccess?: (token: string) => void;
   onGoToSignUp?: () => void;
 }
 
@@ -23,10 +23,15 @@ export const SignIn: React.FC<SignInProps> = ({ onSignInSuccess, onGoToSignUp })
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    onSignInSuccess?.();
+    try {
+      const result = await ApiService.signin(formData);
+      localStorage.setItem('token', result.token);
+      onSignInSuccess?.(result.token);
+    } catch (error) {
+      alert('Sign in failed: ' + error.message);
+    }
   };
 
   return (
