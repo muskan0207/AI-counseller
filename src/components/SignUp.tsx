@@ -234,13 +234,14 @@ export const SignUp: React.FC<SignUpProps> = ({ onSignUpSuccess, onGoToSignIn })
               name="agreeToTerms"
               checked={formData.agreeToTerms}
               onChange={handleInputChange}
+              id='terms'
               className="h-4 w-4 text-white bg-white border-gray-300 rounded focus:ring-blue-500 checked:bg-black checked:border-black"
               style={{
                 accentColor: formData.agreeToTerms ? '#000000' : undefined
               }}
               required
             />
-            <label className="ml-2 text-xs text-gray-700">
+            <label className="ml-2 text-xs text-gray-700" htmlFor='terms'>
               Agree with <span className="text-blue-600 hover:underline cursor-pointer">Terms & Conditions</span>
             </label>
           </div>
